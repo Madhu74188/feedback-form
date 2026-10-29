@@ -1,11 +1,17 @@
 
+require("dotenv").config();
+
+// Fix Node.js DNS issue
+const dns = require("dns");
+dns.setServers(["8.8.8.8", "1.1.1.1"]);
+
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 
 const app = express();
 
-// Allow frontend connections
+// Middleware
 app.use(cors({
     origin: [
         "http://localhost:5173",
@@ -16,15 +22,6 @@ app.use(cors({
 }));
 
 app.use(express.json());
-
-// MongoDB connection
-mongoose.connect("mongodb://127.0.0.1:27017/feedbackDB")
-    .then(() => {
-        console.log("MongoDB Connected");
-    })
-    .catch((err) => {
-        console.log("MongoDB Error:", err.message);
-    });
 
 // Feedback model
 const Feedback = mongoose.model("Feedback", {
@@ -50,7 +47,7 @@ app.post("/feedback", async (req, res) => {
             data: savedFeedback
         });
     } catch (error) {
-        console.log("Error:", error.message);
+        console.log("Feedback Error:", error.message);
 
         res.status(500).json({
             message: "Failed to save feedback"
@@ -62,16 +59,37 @@ app.post("/feedback", async (req, res) => {
 app.get("/feedback", async (req, res) => {
     try {
         const feedbacks = await Feedback.find();
-        res.json(feedbacks);
+
+        res.status(200).json(feedbacks);
     } catch (error) {
+        console.log("Retrieve Error:", error.message);
+
         res.status(500).json({
             message: "Failed to retrieve feedback"
         });
     }
 });
 
-// Start server
-app.listen(5000, () => {
-    console.log("Server running on port 5000");
-});
+// Start server after MongoDB connection
+const PORT = process.env.PORT || 5000;
 
+async function startServer() {
+    try {
+        if (!process.env.MONGO_URI) {
+            throw new Error("MONGO_URI is missing in .env file");
+        }
+
+        await mongoose.connect(process.env.MONGO_URI);
+
+        console.log("MongoDB Atlas Connected");
+
+        app.listen(PORT, () => {
+            console.log(`Server running on port ${PORT}`);
+        });
+
+    } catch (error) {
+        console.log("MongoDB Connection Error:", error.message);
+    }
+}
+
+startServer();

@@ -26,7 +26,7 @@ function App() {
 
     try {
       const response = await fetch(
-        "http://localhost:5000/feedback",
+        "https://feedback-form-api-y54u.onrender.com/feedback",
         {
           method: "POST",
           headers: {

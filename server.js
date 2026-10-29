@@ -1,7 +1,6 @@
 
 require("dotenv").config();
 
-// Fix Node.js DNS issue
 const dns = require("dns");
 dns.setServers(["8.8.8.8", "1.1.1.1"]);
 
@@ -11,11 +10,12 @@ const cors = require("cors");
 
 const app = express();
 
-// Middleware
+// CORS configuration
 app.use(cors({
     origin: [
         "http://localhost:5173",
-        "http://localhost:5174"
+        "http://localhost:5174",
+        "https://feedback-form-umber-gamma.vercel.app"
     ],
     methods: ["GET", "POST", "OPTIONS"],
     allowedHeaders: ["Content-Type"]
@@ -23,7 +23,7 @@ app.use(cors({
 
 app.use(express.json());
 
-// Feedback model
+// Feedback Schema
 const Feedback = mongoose.model("Feedback", {
     name: String,
     department: String,
@@ -46,6 +46,7 @@ app.post("/feedback", async (req, res) => {
             message: "Feedback submitted successfully!",
             data: savedFeedback
         });
+
     } catch (error) {
         console.log("Feedback Error:", error.message);
 
@@ -55,12 +56,13 @@ app.post("/feedback", async (req, res) => {
     }
 });
 
-// View feedback
+// Retrieve feedback
 app.get("/feedback", async (req, res) => {
     try {
         const feedbacks = await Feedback.find();
 
         res.status(200).json(feedbacks);
+
     } catch (error) {
         console.log("Retrieve Error:", error.message);
 
@@ -70,13 +72,13 @@ app.get("/feedback", async (req, res) => {
     }
 });
 
-// Start server after MongoDB connection
+// Start server
 const PORT = process.env.PORT || 5000;
 
 async function startServer() {
     try {
         if (!process.env.MONGO_URI) {
-            throw new Error("MONGO_URI is missing in .env file");
+            throw new Error("MONGO_URI is missing");
         }
 
         await mongoose.connect(process.env.MONGO_URI);
@@ -89,6 +91,7 @@ async function startServer() {
 
     } catch (error) {
         console.log("MongoDB Connection Error:", error.message);
+        process.exit(1);
     }
 }
 

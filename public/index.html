@@ -1,7 +1,9 @@
 
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Feedback Form</title>
 </head>
 <body>
@@ -9,39 +11,62 @@
     <h2>Feedback Form</h2>
 
     <form id="form">
-        <label>Name:</label>
+        <label for="name">Name:</label>
         <input type="text" id="name" required>
         <br><br>
 
-        <label>Feedback:</label>
+        <label for="message">Feedback:</label>
         <textarea id="message" required></textarea>
         <br><br>
 
-        <button type="submit">Submit</button>
+        <button type="submit" id="submitBtn">Submit</button>
     </form>
 
     <p id="result"></p>
 
     <script>
-        document.getElementById("form").onsubmit = async function(e) {
+        // Replace this with your actual Render backend URL
+        const API_URL = "https://feedback-form-api-y54u.onrender.com";
+        document.getElementById("form").addEventListener("submit", async function(e) {
             e.preventDefault();
 
-            const response = await fetch("/feedback", {
-                method: "POST",
-                headers: {"Content-Type": "application/json"},
-                body: JSON.stringify({
-                    name: document.getElementById("name").value,
-                    message: document.getElementById("message").value
-                })
-            });
+            const result = document.getElementById("result");
+            const submitBtn = document.getElementById("submitBtn");
 
-            document.getElementById("result").innerText =
-                await response.text();
+            const data = {
+                name: document.getElementById("name").value,
+                feedback: document.getElementById("message").value
+            };
 
-            this.reset();
-        };
+            submitBtn.disabled = true;
+            result.innerText = "Submitting...";
+
+            try {
+                const response = await fetch(`${API_URL}/feedback`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const responseData = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(responseData.message || "Submission failed");
+                }
+
+                result.innerText = "Feedback submitted successfully!";
+                this.reset();
+
+            } catch (error) {
+                console.error("Error:", error);
+                result.innerText = "Failed to submit feedback. Please try again.";
+            } finally {
+                submitBtn.disabled = false;
+            }
+        });
     </script>
 
 </body>
 </html>
-
